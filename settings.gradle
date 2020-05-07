@@ -1,0 +1,2 @@
+include ':app', ':zimglib'
+rootProject.name='Zimg'
