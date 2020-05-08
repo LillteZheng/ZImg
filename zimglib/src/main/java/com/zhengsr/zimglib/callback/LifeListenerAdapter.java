@@ -24,6 +24,8 @@ public abstract class LifeListenerAdapter  {
 
     }
 
+    public void onLowMemory(){}
+
     public void onFail(String errorMsg) {
 
     }

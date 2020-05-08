@@ -2,8 +2,8 @@ package com.zhengsr.zimglib.util;
 
 import android.util.Log;
 
-public class lggUtils {
-    private static final String TAG = "lggUtils";
+public class LggUtils {
+    private static final String TAG = "LggUtils";
     private static final boolean ENABLE = true;
 
     public static void d(String msg){

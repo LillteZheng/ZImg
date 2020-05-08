@@ -55,4 +55,14 @@ public class SupportLifeFragment extends Fragment {
             mLifeListerAdapter.onDestroy();
         }
     }
+
+
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        if (mLifeListerAdapter != null) {
+            mLifeListerAdapter.onLowMemory();
+        }
+
+    }
 }

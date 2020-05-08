@@ -5,7 +5,7 @@ import android.content.Context;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 
-import com.zhengsr.zimglib.entrance.ZRequestManager;
+import com.zhengsr.zimglib.entrance.ZCyclerDelegate;
 import com.zhengsr.zimglib.util.ZUtils;
 
 /**
@@ -18,32 +18,32 @@ import com.zhengsr.zimglib.util.ZUtils;
 public class Zimg {
 
 
-    public static ZRequestManager with(Context context){
+    public static ZCyclerDelegate with(Context context){
         return getReceiver(context).get(context);
     }
 
-    public static ZRequestManager with(Activity activity){
+    public static ZCyclerDelegate with(Activity activity){
         return getReceiver(activity).get(activity);
     }
 
-    public static ZRequestManager with(FragmentActivity activity){
+    public static ZCyclerDelegate with(FragmentActivity activity){
         return getReceiver(activity).get(activity);
     }
 
-    public static ZRequestManager with(Fragment fragment){
+    public static ZCyclerDelegate with(Fragment fragment){
         return getReceiver(fragment.getActivity()).get(fragment);
     }
 
-    public static ZRequestManager with(android.app.Fragment fragment){
+    public static ZCyclerDelegate with(android.app.Fragment fragment){
         return getReceiver(fragment.getActivity()).get(fragment);
     }
 
 
-    private static ZRequestManager getReceiver(Context context){
+    private static ZCyclerDelegate getReceiver(Context context){
         ZUtils.checkNull(context,
                 "You cannot start a load on a not yet attached View or a Fragment where getActivity() "
                         + "returns null (which usually occurs when getActivity() is called before the Fragment "
                         + "is attached or after the Fragment is destroyed).");
-        return ZRequestManager.get();
+        return ZCyclerDelegate.get();
     }
 }
