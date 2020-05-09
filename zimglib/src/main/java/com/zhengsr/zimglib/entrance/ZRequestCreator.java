@@ -9,7 +9,6 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 
 import com.zhengsr.zimglib.bean.ImgBean;
-import com.zhengsr.zimglib.util.LggUtils;
 import com.zhengsr.zimglib.util.ZUtils;
 
 /**
@@ -89,7 +88,6 @@ public class ZRequestCreator {
          */
         if (!mRequest.hasImage()) {
             //todo cancel request
-
             //set placeholder to target
             setPlaceholder(target,mPlaceholderBean);
             return;

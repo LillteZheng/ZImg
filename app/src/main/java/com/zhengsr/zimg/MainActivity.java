@@ -1,12 +1,12 @@
 package com.zhengsr.zimg;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
-import com.squareup.picasso.Picasso;
-import com.zhengsr.zimglib.Zimg;
+import com.zhengsr.zimglib.util.LggUtils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,17 +33,57 @@ public class MainActivity extends AppCompatActivity {
             4）由RequestHandler来处理当前request,调用其load方法将加载完成后的图片交给PicassoDrawable显示图片。
         代码流程如下：Picasso->load->创建request->创建action->Dispatcher分发action->RequestHandler的load方法处理具体的请求->PicassoDrawable显示图片。
        * */
-      /*  Picasso.get()
+       /* Picasso.get()
                 .load(R.mipmap.ic_launcher)
                 .placeholder(R.mipmap.load)
                 .error(R.mipmap.fail)
-                .into(imageView);*/
+                .into(imageView);
 
 
         Zimg.with(this)
                 .load(R.mipmap.ic_launcher)
                 .placehoder(R.mipmap.load)
-                .into(imageView);
+                .error(R.mipmap.fail)
+                .into(imageView);*/
+        String path = getFilesDir().getAbsolutePath();
+        LggUtils.d("MainActivity-onCreate:" +path);
+        String appResourcePath=getApplicationContext().getPackageResourcePath();
+        LggUtils.d("MainActivity-onCreate:" +appResourcePath);
 
+
+       imageView.getViewTreeObserver().addOnGlobalLayoutListener(()->{
+           BitmapFactory.Options options = new BitmapFactory.Options();
+           BitmapFactory.decodeResource(getResources(), R.mipmap.test, options);
+           options.inJustDecodeBounds = true;
+           options.inSampleSize = calculateInSampleSize(options, imageView.getWidth(), imageView.getHeight());
+           options.inJustDecodeBounds = false;
+           Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.test, options);
+           imageView.setImageBitmap(bitmap);
+       });
+
+
+    }
+
+    /**
+     * 计算缩放比例
+     * @param options
+     * @param reWidth
+     * @param reHeight
+     * @return
+     */
+    private int calculateInSampleSize(BitmapFactory.Options options, int reWidth, int reHeight) {
+        int w = options.outWidth;
+        int h = options.outHeight;
+        int inSampleSize = 1;
+        if (w > reWidth || h > reHeight) {
+            int halfWidth = w / 2;
+            int halfHeight = h / 2;
+            while ((halfHeight / inSampleSize) >= reHeight &&
+                    (halfWidth / inSampleSize) >= reWidth) {
+                //2的倍数
+                inSampleSize *= 2;
+            }
+        }
+        return inSampleSize;
     }
 }
