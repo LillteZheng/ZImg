@@ -14,9 +14,12 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 
+import com.zhengsr.zimglib.callback.ICache;
 import com.zhengsr.zimglib.callback.LifeListenerAdapter;
 import com.zhengsr.zimglib.fragment.LifeFragment;
 import com.zhengsr.zimglib.fragment.SupportLifeFragment;
+import com.zhengsr.zimglib.tools.DiskCache;
+import com.zhengsr.zimglib.tools.MemoryCache;
 import com.zhengsr.zimglib.util.ZUtils;
 import com.zhengsr.zimglib.util.LggUtils;
 
@@ -28,10 +31,24 @@ import java.io.File;
  */
 public class ZCyclerDelegate {
     static final String FRAGMENT_TAG = "com.zhengsr.zimglib.entrance.manager";
-    private static final ZCyclerDelegate INSTANCE = new ZCyclerDelegate();
     private Context mContext;
-    public static ZCyclerDelegate get(){
-        return INSTANCE;
+    private static ZCyclerDelegate sInstance;
+    private final ICache mMemoryCache;
+    private final ICache mDiskCache;
+    public static ZCyclerDelegate getInstance(Context context){
+        if (sInstance == null) {
+            synchronized (ZCyclerDelegate.class){
+                if (sInstance != null) {
+                    sInstance = new ZCyclerDelegate(context);
+                }
+            }
+        }
+        return sInstance;
+    }
+
+    private ZCyclerDelegate(Context context){
+        mMemoryCache = new MemoryCache(context);
+        mDiskCache = new DiskCache(context);
     }
 
 

@@ -18,6 +18,18 @@ import com.zhengsr.zimglib.util.ZUtils;
 public class Zimg {
 
 
+    /**
+     * 图片框架加载要求
+     * 1、图片的同步加载
+     * 2、图片的异步加载
+     * 3、图片压缩
+     * 4、内存缓存
+     * 5、磁盘缓存
+     * 6、网络拉取
+     */
+
+
+
     public static ZCyclerDelegate with(Context context){
         return getReceiver(context).get(context);
     }
@@ -44,6 +56,6 @@ public class Zimg {
                 "You cannot start a load on a not yet attached View or a Fragment where getActivity() "
                         + "returns null (which usually occurs when getActivity() is called before the Fragment "
                         + "is attached or after the Fragment is destroyed).");
-        return ZCyclerDelegate.get();
+        return ZCyclerDelegate.getInstance(context);
     }
 }

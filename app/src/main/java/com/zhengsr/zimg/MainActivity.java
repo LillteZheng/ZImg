@@ -6,9 +6,26 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
 
+import com.squareup.picasso.Picasso;
+import com.zhengsr.zimglib.Zimg;
+import com.zhengsr.zimglib.cache.DiskLruCache;
 import com.zhengsr.zimglib.util.LggUtils;
+import com.zhengsr.zimglib.util.ZUtils;
+
+import java.io.BufferedOutputStream;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class MainActivity extends AppCompatActivity {
+    private final int DISK_CACHE_INDEX = 0;
+    private DiskLruCache mDiskLruCache;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
             4）由RequestHandler来处理当前request,调用其load方法将加载完成后的图片交给PicassoDrawable显示图片。
         代码流程如下：Picasso->load->创建request->创建action->Dispatcher分发action->RequestHandler的load方法处理具体的请求->PicassoDrawable显示图片。
        * */
-       /* Picasso.get()
+        Picasso.get()
                 .load(R.mipmap.ic_launcher)
                 .placeholder(R.mipmap.load)
                 .error(R.mipmap.fail)
@@ -44,24 +61,141 @@ public class MainActivity extends AppCompatActivity {
                 .load(R.mipmap.ic_launcher)
                 .placehoder(R.mipmap.load)
                 .error(R.mipmap.fail)
-                .into(imageView);*/
-        String path = getFilesDir().getAbsolutePath();
-        LggUtils.d("MainActivity-onCreate:" +path);
-        String appResourcePath=getApplicationContext().getPackageResourcePath();
-        LggUtils.d("MainActivity-onCreate:" +appResourcePath);
+                .into(imageView);
+
+      /*  new Thread(new Runnable() {
+            @Override
+            public void run() {
+                downloadAndSave("http://p1.pstatp.com/large/166200019850062839d3");
+            }
+        }).start();*/
 
 
-       imageView.getViewTreeObserver().addOnGlobalLayoutListener(()->{
-           BitmapFactory.Options options = new BitmapFactory.Options();
-           BitmapFactory.decodeResource(getResources(), R.mipmap.test, options);
-           options.inJustDecodeBounds = true;
-           options.inSampleSize = calculateInSampleSize(options, imageView.getWidth(), imageView.getHeight());
-           options.inJustDecodeBounds = false;
-           Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.test, options);
-           imageView.setImageBitmap(bitmap);
-       });
 
 
+    }
+
+    private Bitmap getBitmap(String url,int reWidth,int reHeight){
+        String key = hashKeyFromString(url);
+        try {
+            DiskLruCache.Snapshot snapshot = mDiskLruCache.get(key);
+            if (snapshot != null) {
+
+                //此时得到的是一个有序的 inputStream 流，
+                FileInputStream inputStream = (FileInputStream) snapshot.getInputStream(DISK_CACHE_INDEX);
+                /**
+                 * 如果再把该stream进行第二次 decodeStream，节点已经到末尾了，拿到的数据为 null
+                 * 所以，可以通过 inputStream.getFD()拿到FileDescriptor，再去变换。
+                 */
+                FileDescriptor fileDescriptor = inputStream.getFD();
+                BitmapFactory.Options options = new BitmapFactory.Options();
+                BitmapFactory.decodeFileDescriptor(fileDescriptor,null,options);
+                options.inJustDecodeBounds = true;
+                options.inSampleSize = calculateInSampleSize(options,reWidth,reHeight);
+                options.inJustDecodeBounds = false;
+                return BitmapFactory.decodeFileDescriptor(fileDescriptor,null,options);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    /**
+     * 下载和保存，记得放线程中去下载
+     * @param url
+     */
+    private void downloadAndSave(String url){
+        String key = hashKeyFromString(url);
+        try {
+            DiskLruCache.Editor editor = mDiskLruCache.edit(key);
+            OutputStream outputStream = editor.newOutputStream(DISK_CACHE_INDEX);
+
+            if (downloadUrl(url,outputStream)){
+                //提交
+                editor.commit();
+
+            }else{
+                //取消
+                editor.abort();
+            }
+            mDiskLruCache.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 下载数据
+     * @param urlString
+     * @param outputStream
+     * @return
+     */
+    private boolean downloadUrl(String urlString, OutputStream outputStream){
+        HttpURLConnection con = null;
+        BufferedOutputStream out = null;
+
+        try {
+            URL url = new URL(urlString);
+            con = (HttpURLConnection) url.openConnection();
+            InputStream stream = con.getInputStream();
+            out = new BufferedOutputStream(outputStream);
+            int len;
+            byte[] bytes = new byte[1024];
+            while( (len = stream.read(bytes)) != -1){
+                out.write(bytes,0,len);
+            }
+
+            return true;
+
+        } catch (Exception e) {
+            LggUtils.d("MainActivity-downloadUrl:" +e);
+            return false;
+        }finally {
+            if (con != null) {
+                con.disconnect();
+            }
+            ZUtils.close(out);
+        }
+    }
+
+
+    /**
+     * 字符串转md5
+     * @param key
+     * @return
+     */
+    private String hashKeyFromString(String key) {
+        String cacheKey;
+        try {
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+            digest.update(key.getBytes());
+
+            cacheKey = bytesToHexString(digest.digest());
+
+        } catch (NoSuchAlgorithmException e) {
+            cacheKey = String.valueOf(key.hashCode());
+        }
+
+        return cacheKey;
+    }
+
+    /**
+     * 数组转字符串
+     * @param bytes
+     * @return
+     */
+    private String bytesToHexString(byte[] bytes) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < bytes.length; i++) {
+            String hex = Integer.toHexString(0xFF & bytes[i]);
+            if (hex.length() == 1) {
+                sb.append('0');
+            }
+            sb.append(hex);
+        }
+
+        return sb.toString();
     }
 
     /**
